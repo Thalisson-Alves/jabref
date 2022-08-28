@@ -18,8 +18,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DateTest {
     private static Stream<Arguments> validDates() {
@@ -89,5 +91,58 @@ class DateTest {
     @Test
     void parseDateNull() {
         assertThrows(NullPointerException.class, () -> Date.parse(null));
+    }
+
+    @Test
+    void parseUncertainDate() {
+        Optional<Date> expected = Optional.of(new Date(Year.of(1723)));
+        expected.ifPresent(value -> value.setUncertain(true));
+
+        assertEquals(expected, Date.parse("1723?"));
+        assertTrue(Date.parse("1723?").map(Date::getUncertain).orElse(false));
+    }
+
+    @Test
+    void parseCircaDate() {
+        Optional<Date> expected = Optional.of(new Date(Year.of(1723)));
+        expected.ifPresent(value -> value.setCirca(true));
+
+        assertEquals(expected, Date.parse("1723~"));
+        assertTrue(Date.parse("1723~").map(Date::getCirca).orElse(false));
+    }
+
+    @Test
+    void parseUncertainAndCircaDate() {
+        Optional<Date> expected = Optional.of(new Date(Year.of(1723)));
+        expected.ifPresent(value -> {
+            value.setCirca(true);
+            value.setUncertain(true);
+        });
+
+        assertEquals(expected, Date.parse("1723?~"));
+        assertTrue(Date.parse("1723?~").map(Date::getCirca).orElse(false));
+        assertTrue(Date.parse("1723?~").map(Date::getUncertain).orElse(false));
+    }
+
+    @Test
+    void parseUncertainAndCircaDateUsingPercentChar() {
+        Optional<Date> expected = Optional.of(new Date(Year.of(1723)));
+        expected.ifPresent(value -> {
+            value.setCirca(true);
+            value.setUncertain(true);
+        });
+
+        assertEquals(expected, Date.parse("1723%"));
+        assertTrue(Date.parse("1723%").map(Date::getCirca).orElse(false));
+        assertTrue(Date.parse("1723%").map(Date::getUncertain).orElse(false));
+    }
+
+    @Test
+    void parseCertainDateDontSetUncertainNorCirca() {
+        Optional<Date> expected = Optional.of(new Date(Year.of(1723)));
+
+        assertEquals(expected, Date.parse("1723"));
+        assertFalse(Date.parse("1723").map(Date::getUncertain).orElse(true));
+        assertTrue(Date.parse("1723%").map(Date::getCirca).orElse(true));
     }
 }

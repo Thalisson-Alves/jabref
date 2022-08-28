@@ -50,6 +50,8 @@ public class Date {
 
     private final TemporalAccessor date;
     private final TemporalAccessor endDate;
+    private boolean uncertain;
+    private boolean circa;
 
     public Date(int year, int month, int dayOfMonth) {
         this(LocalDate.of(year, month, dayOfMonth));
@@ -102,6 +104,20 @@ public class Date {
             } catch (DateTimeParseException ignored) {
                 return Optional.empty();
             }
+        }
+
+        // if dateString ends with one of '?', '~', '%' se the corresponding attribute (circa, uncertain).
+        if (dateString.matches(".*[?~%]$")) {
+            Optional<Date> parsed = parse(dateString.substring(0, dateString.length() - 1));
+            switch (dateString.charAt(dateString.length() - 1)) {
+                case '?' -> parsed.ifPresent(date -> date.setUncertain(true));
+                case '~' -> parsed.ifPresent(date -> date.setCirca(true));
+                case '%' -> {
+                    parsed.ifPresent(date -> date.setCirca(true));
+                    parsed.ifPresent(date -> date.setUncertain(true));
+                }
+            }
+            return parsed;
         }
 
         try {
@@ -210,5 +226,21 @@ public class Date {
     @Override
     public int hashCode() {
         return Objects.hash(date);
+    }
+
+    public void setUncertain(boolean uncertain) {
+        this.uncertain = uncertain;
+    }
+
+    public boolean getUncertain() {
+        return uncertain;
+    }
+
+    public void setCirca(boolean circa) {
+        this.circa = circa;
+    }
+
+    public boolean getCirca() {
+        return circa;
     }
 }
